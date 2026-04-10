@@ -1,14 +1,13 @@
-import { createBucket } from '@linode/api-v4';
+import { createBucket, type ObjectStorageBucket } from '@linode/api-v4';
 import 'cypress-file-upload';
 import { authenticate } from 'support/api/authentication';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { interceptUploadBucketObjectS3 } from 'support/intercepts/object-storage';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
-import { chooseCluster } from 'support/util/clusters';
 import { randomLabel } from 'support/util/random';
 
-import { createObjectStorageBucketFactoryGen1 } from 'src/factories';
+import { chooseRegion } from 'support/util/regions';
 
 // Message shown on-screen when user navigates to an empty bucket.
 const emptyBucketMessage = 'This bucket is empty.';
@@ -28,38 +27,6 @@ const emptyFolderMessage = 'This folder is empty.';
  */
 const getNonEmptyBucketMessage = (bucketLabel: string) => {
   return `The specified bucket '${bucketLabel}' is not empty. Please delete all objects before retrying.`;
-};
-
-/**
- * Create a bucket with the given label and cluster.
- *
- * This function assumes that OBJ Multicluster is enabled. Use
- * `setUpBucket` to set up OBJ buckets when Multicluster is disabled.
- *
- * @param label - Bucket label.
- * @param regionId - ID of Bucket region.
- * @param cors_enabled - Enable CORS on the bucket: defaults to true for Gen1 and false for Gen2.
- *
- * @returns Promise that resolves to created Bucket.
- */
-const setUpBucketMulticluster = (
-  label: string,
-  regionId: string,
-  cors_enabled: boolean = false
-) => {
-  return createBucket(
-    createObjectStorageBucketFactoryGen1.build({
-      // to avoid 400 responses from the API.
-      cluster: undefined,
-      // disable CORS to avoid 400 responses from the API.
-      cors_enabled,
-      label,
-
-      // API accepts either `cluster` or `region`, but not both. Our factory
-      // populates both fields, so we have to manually set `cluster` to `undefined`
-      region: regionId,
-    })
-  );
 };
 
 /**
@@ -144,9 +111,8 @@ describe('Object Storage Multicluster objects', () => {
    */
   it('can upload, access, and delete objects', () => {
     const bucketLabel = randomLabel();
-    const bucketClusterObj = chooseCluster();
-    const bucketRegionId = bucketClusterObj.region;
-    const bucketPage = `/object-storage/buckets/${bucketRegionId}/${bucketLabel}/objects`;
+    const bucketRegion = chooseRegion({ capabilities: ['Object Storage'] });
+    const bucketPage = `/object-storage/buckets/${bucketRegion.id}/${bucketLabel}/objects`;
     const bucketFolderName = randomLabel();
 
     const bucketFiles = [
@@ -170,12 +136,12 @@ describe('Object Storage Multicluster objects', () => {
     });
 
     cy.defer(
-      () => setUpBucketMulticluster(bucketLabel, bucketRegionId),
+      () => createBucket({ label: bucketLabel, region: bucketRegion.id }),
       'creating Object Storage bucket'
-    ).then(() => {
+    ).then((bucket: ObjectStorageBucket) => {
       interceptUploadBucketObjectS3(
         bucketLabel,
-        bucketClusterObj.domain,
+        bucket.s3_endpoint ?? '',
         bucketFiles[0].name
       ).as('uploadObject');
 
@@ -228,7 +194,7 @@ describe('Object Storage Multicluster objects', () => {
       cy.findByText(emptyFolderMessage).should('be.visible');
       interceptUploadBucketObjectS3(
         bucketLabel,
-        bucketClusterObj.domain,
+        bucket.s3_endpoint ?? '',
         `${bucketFolderName}/${bucketFiles[1].name}`
       ).as('uploadObject');
       uploadFile(bucketFiles[1].path, bucketFiles[1].name);

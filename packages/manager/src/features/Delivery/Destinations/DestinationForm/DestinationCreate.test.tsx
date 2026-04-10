@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { accountFactory, objectStorageBucketFactory } from 'src/factories';
+import { accountFactory, objectStorageBucketFactoryGen1 } from 'src/factories';
 import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithThemeAndHookFormContext } from 'src/utilities/testHelpers';
 
@@ -15,12 +15,12 @@ import type { CreateDestinationPayload } from '@linode/api-v4';
 import type { Flags } from 'src/featureFlags';
 
 const mockBuckets = [
-  objectStorageBucketFactory.build({
+  objectStorageBucketFactoryGen1.build({
     hostname: 'bucket-with-hostname.us-east-1.linodeobjects.com',
     label: 'bucket-with-hostname',
     region: 'us-east',
   }),
-  objectStorageBucketFactory.build({
+  objectStorageBucketFactoryGen1.build({
     hostname: 'bucket-with-s3-endpoint.eu-central-1.linodeobjects.com',
     label: 'bucket-with-s3-endpoint',
     region: 'eu-central',

@@ -20,7 +20,7 @@ import { extendRegion } from 'support/util/regions';
 
 import {
   accountFactory,
-  objectStorageBucketFactory,
+  objectStorageBucketFactoryGen1,
   objectStorageKeyFactory,
 } from 'src/factories';
 
@@ -155,7 +155,7 @@ describe('Object Storage Multicluster access keys', () => {
       })
     );
 
-    const mockBuckets = objectStorageBucketFactory.buildList(2, {
+    const mockBuckets = objectStorageBucketFactoryGen1.buildList(2, {
       cluster: undefined,
       region: mockRegion.id,
     });

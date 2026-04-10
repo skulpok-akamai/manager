@@ -11,7 +11,7 @@ import {
 import { makeError } from 'support/util/errors';
 import { randomItem, randomLabel, randomString } from 'support/util/random';
 
-import { objectStorageBucketFactory } from 'src/factories';
+import { objectStorageBucketFactoryGen1 } from 'src/factories';
 
 describe('object storage failure paths', () => {
   /*
@@ -22,7 +22,7 @@ describe('object storage failure paths', () => {
   it('shows error upon object upload failure', () => {
     const bucketLabel = randomLabel();
     const bucketRegion = 'us-southeast';
-    const bucketMock = objectStorageBucketFactory.build({
+    const bucketMock = objectStorageBucketFactoryGen1.build({
       region: bucketRegion,
       hostname: `${bucketLabel}.${bucketRegion}-1.linodeobjects.com`,
       label: bucketLabel,
@@ -81,7 +81,7 @@ describe('object storage failure paths', () => {
   it('shows error upon object list retrieval failure', () => {
     const bucketLabel = randomLabel();
     const bucketRegion = 'us-southeast';
-    const bucketMock = objectStorageBucketFactory.build({
+    const bucketMock = objectStorageBucketFactoryGen1.build({
       region: bucketRegion,
       hostname: `${bucketLabel}.${bucketRegion}-1.linodeobjects.com`,
       label: bucketLabel,

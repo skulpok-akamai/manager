@@ -2,7 +2,10 @@
  * @file End-to-end tests for Object Storage Access Key operations.
  */
 
-import { createBucket } from '@linode/api-v4/lib/object-storage';
+import {
+  createBucket,
+  type ObjectStorageBucket,
+} from '@linode/api-v4/lib/object-storage';
 import { authenticate } from 'support/api/authentication';
 import { mockGetAccount } from 'support/intercepts/account';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
@@ -12,11 +15,10 @@ import {
 } from 'support/intercepts/object-storage';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
-import { chooseCluster } from 'support/util/clusters';
 import { randomLabel } from 'support/util/random';
 
 import { accountFactory } from 'src/factories';
-import { createObjectStorageBucketFactoryLegacy } from 'src/factories/objectStorage';
+import { chooseRegion } from 'support/util/regions';
 
 authenticate();
 describe('object storage access key end-to-end tests', () => {
@@ -121,19 +123,17 @@ describe('object storage access key end-to-end tests', () => {
    */
   it('can create an access key with limited access - e2e', () => {
     const bucketLabel = randomLabel();
-    const bucketClusterObj = chooseCluster();
-    const bucketRequest = createObjectStorageBucketFactoryLegacy.build({
-      cluster: bucketClusterObj.id,
-      label: bucketLabel,
-      // Default factory sets `cluster` and `region`, but API does not accept `region` yet.
-      region: undefined,
-    });
+    const bucketRegion = chooseRegion({ capabilities: ['Object Storage'] });
 
     // Create a bucket before creating access key.
     cy.defer(
-      () => createBucket(bucketRequest),
+      () =>
+        createBucket({
+          label: bucketLabel,
+          region: bucketRegion.id,
+        }),
       'creating Object Storage bucket'
-    ).then(() => {
+    ).then((bucket: ObjectStorageBucket) => {
       const keyLabel = randomLabel();
 
       mockGetAccount(
@@ -209,7 +209,7 @@ describe('object storage access key end-to-end tests', () => {
             });
         });
 
-        const permissionLabel = `This token has read-only access for ${bucketClusterObj.id}-${bucketLabel}`;
+        const permissionLabel = `This token has read-only access for ${bucket.cluster}-${bucketLabel}`;
         cy.findByLabelText(permissionLabel).should('be.visible');
       });
     });

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { objectStorageBucketFactory } from 'src/factories';
+import { objectStorageBucketFactoryGen1 } from 'src/factories';
 import { renderWithTheme, wrapWithTableBody } from 'src/utilities/testHelpers';
 
 import { BucketTableRow } from './BucketTableRow';
@@ -8,7 +8,7 @@ import { BucketTableRow } from './BucketTableRow';
 import type { BucketTableRowProps } from './BucketTableRow';
 
 const mockOnRemove = vi.fn();
-const bucket = objectStorageBucketFactory.build({
+const bucket = objectStorageBucketFactoryGen1.build({
   cluster: 'us-east-1',
   created: '2017-12-11T16:35:31',
   hostname: 'test-bucket-001.alpha.linodeobjects.com',

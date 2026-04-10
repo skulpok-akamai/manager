@@ -9,7 +9,7 @@ import React from 'react';
 import { vi } from 'vitest';
 
 import {
-  objectStorageBucketFactory,
+  objectStorageBucketFactoryGen1,
   objectStorageBucketFactoryGen2,
 } from 'src/factories';
 import { formatDate } from 'src/utilities/formatDate';
@@ -65,7 +65,7 @@ vi.mock('src/queries/object-storage/queries', async () => {
 const mockOnClose = vi.fn();
 
 describe('BucketDetailsDrawer: Legacy UI', () => {
-  const bucket = objectStorageBucketFactory.build();
+  const bucket = objectStorageBucketFactoryGen1.build();
   const region = regionFactory.build({
     id: bucket.region,
   });

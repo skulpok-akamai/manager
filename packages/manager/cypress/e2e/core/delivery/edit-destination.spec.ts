@@ -18,7 +18,7 @@ import { ui } from 'support/ui';
 import { logsDestinationForm } from 'support/ui/pages/logs-destination-form';
 import { randomLabel } from 'support/util/random';
 
-import { objectStorageBucketFactory } from 'src/factories';
+import { objectStorageBucketFactoryGen1 } from 'src/factories';
 import { getDestinationTypeOption } from 'src/features/Delivery/deliveryUtils';
 
 import type {
@@ -146,12 +146,12 @@ describe('Edit Destination', () => {
     describe('Bucket end Endpoint fields', () => {
       it('populates Bucket and Endpoint when selecting an existing bucket and manually entering data', () => {
         mockGetBuckets([
-          objectStorageBucketFactory.build({
+          objectStorageBucketFactoryGen1.build({
             hostname: 'bucket-hostname.us-east-1.linodeobjects.com',
             label: 'bucket-with-hostname',
             region: 'us-east',
           }),
-          objectStorageBucketFactory.build({
+          objectStorageBucketFactoryGen1.build({
             hostname: 'bucket-s3.eu-central-1.linodeobjects.com',
             label: 'bucket-with-s3-endpoint',
             region: 'eu-central',

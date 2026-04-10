@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import * as React from 'react';
 
-import { objectStorageBucketFactory } from 'src/factories/objectStorage';
+import { objectStorageBucketFactoryGen1 } from 'src/factories/objectStorage';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { AccessKeyDrawer, getDefaultScopes } from './AccessKeyDrawer';
@@ -25,7 +25,7 @@ describe('AccessKeyDrawer', () => {
   });
 
   describe('default scopes helper method', () => {
-    const mockBuckets = objectStorageBucketFactory.buildList(5);
+    const mockBuckets = objectStorageBucketFactoryGen1.buildList(5);
     it('should return an item for each bucket', () => {
       expect(getDefaultScopes(mockBuckets)).toHaveLength(mockBuckets.length);
     });
@@ -41,13 +41,13 @@ describe('AccessKeyDrawer', () => {
     });
 
     it('should sort the permissions by cluster', () => {
-      const usaBucket = objectStorageBucketFactory.build({
+      const usaBucket = objectStorageBucketFactoryGen1.build({
         cluster: 'us-east-1',
       });
-      const germanBucket = objectStorageBucketFactory.build({
+      const germanBucket = objectStorageBucketFactoryGen1.build({
         cluster: 'eu-central-1',
       });
-      const asiaBucket = objectStorageBucketFactory.build({
+      const asiaBucket = objectStorageBucketFactoryGen1.build({
         cluster: 'ap-south-1',
       });
       const unsortedBuckets = [usaBucket, germanBucket, asiaBucket];
@@ -58,7 +58,7 @@ describe('AccessKeyDrawer', () => {
   });
 
   describe('Updating scopes', () => {
-    const mockBuckets = objectStorageBucketFactory.buildList(3);
+    const mockBuckets = objectStorageBucketFactoryGen1.buildList(3);
 
     const mockScopes = getDefaultScopes(mockBuckets);
 

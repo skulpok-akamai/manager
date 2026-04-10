@@ -8,7 +8,7 @@ import { ui } from 'support/ui';
 import { randomLabel } from 'support/util/random';
 import { chooseRegion } from 'support/util/regions';
 
-import { accountFactory, objectStorageBucketFactory } from 'src/factories';
+import { accountFactory, objectStorageBucketFactoryGen1 } from 'src/factories';
 
 describe('Object Storage Multicluster Bucket delete', () => {
   /*
@@ -19,7 +19,7 @@ describe('Object Storage Multicluster Bucket delete', () => {
   it('can delete object storage bucket with OBJ Multicluster', () => {
     const bucketLabel = randomLabel();
     const region = chooseRegion().id;
-    const bucketMock = objectStorageBucketFactory.build({
+    const bucketMock = objectStorageBucketFactoryGen1.build({
       cluster: region,
       hostname: `${bucketLabel}.${region}.linodeobjects.com`,
       label: bucketLabel,

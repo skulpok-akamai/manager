@@ -11,7 +11,10 @@ import { ui } from 'support/ui';
 import { randomLabel, randomString } from 'support/util/random';
 import { extendRegion } from 'support/util/regions';
 
-import { accountFactory, objectStorageBucketFactory } from 'src/factories';
+import {
+  accountFactory,
+  createObjectStorageBucketFactoryGen1,
+} from 'src/factories';
 
 describe('Object Storage Multicluster Bucket create', () => {
   /*
@@ -41,8 +44,7 @@ describe('Object Storage Multicluster Bucket create', () => {
 
     const mockRegions = [mockRegionWithObj, ...mockRegionsWithoutObj];
 
-    const mockBucket = objectStorageBucketFactory.build({
-      cluster: undefined,
+    const mockBucket = createObjectStorageBucketFactoryGen1.build({
       label: randomLabel(),
       objects: 0,
       region: mockRegionWithObj.id,

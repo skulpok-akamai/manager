@@ -17,12 +17,11 @@ import {
   mockUploadBucketObjectS3,
 } from 'support/intercepts/object-storage';
 import { ui } from 'support/ui';
-import { chooseCluster } from 'support/util/clusters';
 import { randomLabel } from 'support/util/random';
-import { getRegionById } from 'support/util/regions';
+import { chooseRegion } from 'support/util/regions';
 
 import { accountFactory } from 'src/factories';
-import { objectStorageBucketFactory } from 'src/factories/objectStorage';
+import { objectStorageBucketFactoryGen1 } from 'src/factories/objectStorage';
 describe('object storage smoke tests', () => {
   /*
    * - Tests core object storage bucket create flow using mocked API responses.
@@ -30,21 +29,19 @@ describe('object storage smoke tests', () => {
    * - Confirms bucket is listed in table.
    */
   it('can create object storage bucket - smoke', () => {
-    const mockCluster = chooseCluster();
+    const region = chooseRegion({ capabilities: ['Object Storage'] });
     const bucketLabel = randomLabel();
-    const mockRegion = getRegionById(mockCluster.region);
-    const bucketHostname = `${bucketLabel}.${mockCluster.id}.linodeobjects.com`;
-    const mockBucket = objectStorageBucketFactory.build({
-      cluster: mockCluster.id,
+    const bucketHostname = `${bucketLabel}.${region.id}-1.linodeobjects.com`;
+    const mockBucket = objectStorageBucketFactoryGen1.build({
       hostname: bucketHostname,
       label: bucketLabel,
-      region: mockCluster.region,
+      region: region.id,
     });
     mockGetAccount(accountFactory.build({ capabilities: ['Object Storage'] }));
     mockAppendFeatureFlags({
       gecko2: false,
       objMultiCluster: true,
-      objectStorageGen2: { enabled: false },
+      objectStorageGen2: { enabled: true },
     }).as('getFeatureFlags');
 
     mockGetBuckets([]).as('getBuckets');
@@ -66,7 +63,7 @@ describe('object storage smoke tests', () => {
         cy.findByLabelText('Bucket Name (required)').click();
         cy.focused().type(bucketLabel);
         ui.regionSelect.find().click();
-        cy.focused().type(`${mockCluster.id}{enter}`);
+        cy.focused().type(`${region.id}{enter}`);
         ui.buttonGroup
           .findButtonByTitle('Create Bucket')
           .should('be.visible')
@@ -75,7 +72,6 @@ describe('object storage smoke tests', () => {
 
     cy.wait('@createBucket');
     cy.findByText(bucketLabel).should('be.visible');
-    cy.findByText(mockRegion.label).should('be.visible');
     cy.findByText(mockBucket.hostname).should('be.visible');
   });
 
@@ -90,7 +86,7 @@ describe('object storage smoke tests', () => {
     const bucketLabel = randomLabel();
     const bucketRegion = 'us-southeast';
     const bucketCluster = `${bucketRegion}-1`;
-    const bucketMock = objectStorageBucketFactory.build({
+    const bucketMock = objectStorageBucketFactoryGen1.build({
       region: bucketRegion,
       hostname: `${bucketLabel}.${bucketCluster}.linodeobjects.com`,
       label: bucketLabel,
@@ -182,7 +178,7 @@ describe('object storage smoke tests', () => {
   it('can delete object storage bucket - smoke', () => {
     const bucketLabel = randomLabel();
     const region = 'us-southeast';
-    const bucketMock = objectStorageBucketFactory.build({
+    const bucketMock = objectStorageBucketFactoryGen1.build({
       region: region,
       hostname: `${bucketLabel}.${region}.linodeobjects.com`,
       label: bucketLabel,

@@ -2,7 +2,6 @@
  * @file End-to-end tests for Object Storage operations.
  */
 
-import { createBucket } from '@linode/api-v4/lib/object-storage';
 import { authenticate } from 'support/api/authentication';
 import {
   interceptGetNetworkUtilization,
@@ -10,7 +9,6 @@ import {
 } from 'support/intercepts/account';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import {
-  interceptCreateBucket,
   interceptDeleteBucket,
   interceptGetBucketAccess,
   interceptGetBuckets,
@@ -18,45 +16,11 @@ import {
 } from 'support/intercepts/object-storage';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
-import { chooseCluster } from 'support/util/clusters';
 import { randomLabel } from 'support/util/random';
-import { getRegionById } from 'support/util/regions';
+import { chooseRegion } from 'support/util/regions';
 
-import {
-  accountFactory,
-  createObjectStorageBucketFactoryLegacy,
-} from 'src/factories';
-
-/**
- * Create a bucket with the given label and cluster.
- *
- * This function assumes that OBJ Multicluster is not enabled. Use
- * `setUpBucketMulticluster` to set up OBJ buckets when Multicluster is enabled.
- *
- * @param label - Bucket label.
- * @param cluster - Bucket cluster.
- * @param cors_enabled - Enable CORS on the bucket: defaults to true for Gen1 and false for Gen2.
- *
- * @returns Promise that resolves to created Bucket.
- */
-const setUpBucket = (
-  label: string,
-  cluster: string,
-  cors_enabled: boolean = true
-) => {
-  return createBucket(
-    createObjectStorageBucketFactoryLegacy.build({
-      cluster,
-      cors_enabled,
-      label,
-
-      // API accepts either `cluster` or `region`, but not both. Our factory
-      // populates both fields, so we have to manually set `region` to `undefined`
-      // to avoid 400 responses from the API.
-      region: undefined,
-    })
-  );
-};
+import { accountFactory } from 'src/factories';
+import { createBucket, type ObjectStorageBucket } from '@linode/api-v4';
 
 authenticate();
 beforeEach(() => {
@@ -74,80 +38,67 @@ describe('object storage end-to-end tests', () => {
    * - Confirms that empty buckets can be deleted.
    * - Confirms that deleted buckets are no longer listed on landing page.
    */
-  it('can create and delete object storage buckets', () => {
+  it('can delete object storage bucket', () => {
     cy.tag('purpose:syntheticTesting');
     const bucketLabel = randomLabel();
-    const bucketClusterObj = chooseCluster();
-    const bucketRegion = getRegionById(bucketClusterObj.region);
-    let bucketHostname: string;
-    interceptGetBuckets().as('getBuckets');
-    interceptCreateBucket().as('createBucket');
-    interceptDeleteBucket(bucketLabel, bucketRegion.id).as('deleteBucket');
-    interceptGetNetworkUtilization().as('getNetworkUtilization');
+    const bucketRegion = chooseRegion({ capabilities: ['Object Storage'] });
 
-    mockGetAccount(accountFactory.build({ capabilities: ['Object Storage'] }));
-    mockAppendFeatureFlags({
-      objMultiCluster: false,
-      objectStorageGen2: { enabled: false },
-    }).as('getFeatureFlags');
+    cy.defer(
+      () =>
+        createBucket({
+          label: bucketLabel,
+          region: bucketRegion.id,
+        }),
+      'creating Object Storage bucket'
+    ).then((bucket: ObjectStorageBucket) => {
+      interceptGetBuckets().as('getBuckets');
+      interceptDeleteBucket(bucketLabel, bucketRegion.id).as('deleteBucket');
+      interceptGetNetworkUtilization().as('getNetworkUtilization');
 
-    cy.visitWithLogin('/object-storage/buckets');
-    cy.wait(['@getFeatureFlags', '@getBuckets', '@getNetworkUtilization']);
+      mockGetAccount(
+        accountFactory.build({ capabilities: ['Object Storage'] })
+      );
+      mockAppendFeatureFlags({
+        objMultiCluster: true,
+        objectStorageGen2: { enabled: true },
+      }).as('getFeatureFlags');
 
-    // Wait for loader to disappear, indicating that all buckets have been loaded.
-    // Mitigates test failures stemming from M3-7833.
-    cy.findByTestId('Buckets').within(() => {
-      cy.findByLabelText('Content is loading').should('not.exist');
+      cy.visitWithLogin('/object-storage/buckets');
+      cy.wait(['@getFeatureFlags', '@getBuckets', '@getNetworkUtilization']);
+
+      // Wait for loader to disappear, indicating that all buckets have been loaded.
+      // Mitigates test failures stemming from M3-7833.
+      cy.findByTestId('Buckets').within(() => {
+        cy.findByLabelText('Content is loading').should('not.exist');
+      });
+
+      // Confirm that bucket is created, initiate deletion.
+      cy.findByText(bucketLabel)
+        .should('be.visible')
+        .closest('tr')
+        .within(() => {
+          cy.findByText(bucketRegion.label).should('be.visible');
+          cy.findByText(bucket.hostname).should('be.visible');
+          ui.button.findByTitle('Delete').should('be.visible').click();
+        });
+
+      ui.dialog
+        .findByTitle(`Delete Bucket ${bucketLabel}`)
+        .should('be.visible')
+        .within(() => {
+          cy.findByLabelText('Bucket Name').click();
+          cy.focused().type(bucketLabel);
+          ui.buttonGroup
+            .findButtonByTitle('Delete')
+            .should('be.visible')
+            .should('be.enabled')
+            .click();
+        });
+
+      // Confirm that deletion succeeds.
+      cy.wait('@deleteBucket').its('response.statusCode').should('eq', 200);
+      cy.findByText(bucketLabel).should('not.exist');
     });
-
-    ui.button.findByTitle('Create Bucket').should('be.visible').click();
-
-    ui.drawer
-      .findByTitle('Create Bucket')
-      .should('be.visible')
-      .within(() => {
-        cy.findByLabelText('Bucket Name (required)').click();
-        cy.focused().type(bucketLabel);
-        ui.regionSelect.find().click();
-        cy.focused().type(`${bucketRegion.label}{enter}`);
-
-        ui.buttonGroup
-          .findButtonByTitle('Create Bucket')
-          .should('be.visible')
-          .click();
-      });
-
-    cy.wait(['@createBucket', '@getBuckets']).then(([createBucket]) => {
-      bucketHostname = createBucket?.response?.body?.hostname;
-    });
-    ui.drawer.find().should('not.exist');
-
-    // Confirm that bucket is created, initiate deletion.
-    cy.findByText(bucketLabel)
-      .should('be.visible')
-      .closest('tr')
-      .within(() => {
-        cy.findByText(bucketRegion.label).should('be.visible');
-        cy.findByText(bucketHostname).should('be.visible');
-        ui.button.findByTitle('Delete').should('be.visible').click();
-      });
-
-    ui.dialog
-      .findByTitle(`Delete Bucket ${bucketLabel}`)
-      .should('be.visible')
-      .within(() => {
-        cy.findByLabelText('Bucket Name').click();
-        cy.focused().type(bucketLabel);
-        ui.buttonGroup
-          .findButtonByTitle('Delete')
-          .should('be.visible')
-          .should('be.enabled')
-          .click();
-      });
-
-    // Confirm that deletion succeeds.
-    cy.wait('@deleteBucket').its('response.statusCode').should('eq', 200);
-    cy.findByText(bucketLabel).should('not.exist');
   });
 
   /*
@@ -157,18 +108,19 @@ describe('object storage end-to-end tests', () => {
    */
   it('can update bucket access', () => {
     const bucketLabel = randomLabel();
-    const bucketClusterObj = chooseCluster();
-    const bucketCluster = bucketClusterObj.id;
-    const bucketAccessPage = `/object-storage/buckets/${bucketCluster}/${bucketLabel}/access`;
+    const region = chooseRegion({ capabilities: ['Object Storage'] });
+    const bucketAccessPage = `/object-storage/buckets/${region.id}/${bucketLabel}/access`;
 
     cy.defer(
-      () => setUpBucket(bucketLabel, bucketCluster),
+      () =>
+        createBucket({
+          label: bucketLabel,
+          region: region.id,
+        }),
       'creating Object Storage bucket'
     ).then(() => {
-      interceptGetBucketAccess(bucketLabel, bucketCluster).as(
-        'getBucketAccess'
-      );
-      interceptUpdateBucketAccess(bucketLabel, bucketCluster).as(
+      interceptGetBucketAccess(bucketLabel, region.id).as('getBucketAccess');
+      interceptUpdateBucketAccess(bucketLabel, region.id).as(
         'updateBucketAccess'
       );
 

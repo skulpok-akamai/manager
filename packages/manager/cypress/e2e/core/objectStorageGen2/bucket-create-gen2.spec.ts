@@ -158,7 +158,6 @@ describe('Object Storage Gen2 create bucket tests', () => {
     mockGetBuckets([]).as('getBuckets');
     mockDeleteBucket(bucketLabel, mockRegion.id).as('deleteBucket');
     mockCreateBucket({
-      cors_enabled: true,
       endpoint_type: 'E0',
       label: bucketLabel,
       region: mockRegion.id,
@@ -299,7 +298,6 @@ describe('Object Storage Gen2 create bucket tests', () => {
     mockGetBuckets([]).as('getBuckets');
     mockDeleteBucket(bucketLabel, mockRegion.id).as('deleteBucket');
     mockCreateBucket({
-      cors_enabled: true,
       endpoint_type: 'E1',
       label: bucketLabel,
       region: mockRegion.id,
@@ -425,7 +423,6 @@ describe('Object Storage Gen2 create bucket tests', () => {
     mockGetBuckets([]).as('getBuckets');
     mockDeleteBucket(bucketLabel, mockRegion.id).as('deleteBucket');
     mockCreateBucket({
-      cors_enabled: true,
       endpoint_type: 'E2',
       label: bucketLabel,
       region: mockRegion.id,
@@ -549,7 +546,6 @@ describe('Object Storage Gen2 create bucket tests', () => {
     mockGetBuckets([]).as('getBuckets');
     mockDeleteBucket(bucketLabel, mockRegion.id).as('deleteBucket');
     mockCreateBucket({
-      cors_enabled: false,
       endpoint_type: 'E3',
       label: bucketLabel,
       region: mockRegion.id,

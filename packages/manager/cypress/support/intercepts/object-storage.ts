@@ -12,7 +12,6 @@ import { objectStorageBucketFactoryGen2 } from 'src/factories';
 
 import type { Quota, QuotaUsage } from '@linode/api-v4';
 import type {
-  CreateObjectStorageBucketPayload,
   ObjectStorageBucket,
   ObjectStorageBucketAccess,
   ObjectStorageCluster,
@@ -131,17 +130,12 @@ export const interceptCreateBucket = (): Cypress.Chainable<null> => {
  * @returns Cypress chainable.
  */
 export const mockCreateBucket = (
-  bucket: CreateObjectStorageBucketPayload
+  bucket?: Partial<ObjectStorageBucket>
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'POST',
     apiMatcher('object-storage/buckets'),
-    makeResponse(
-      objectStorageBucketFactoryGen2.build({
-        ...bucket,
-        s3_endpoint: undefined,
-      })
-    )
+    makeResponse(objectStorageBucketFactoryGen2.build(bucket))
   );
 };
 

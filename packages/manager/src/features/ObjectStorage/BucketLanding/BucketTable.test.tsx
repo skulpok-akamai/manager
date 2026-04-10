@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {
-  objectStorageBucketFactory,
+  objectStorageBucketFactoryGen1,
   objectStorageBucketFactoryGen2,
 } from 'src/factories';
 import { mockMatchMedia, renderWithTheme } from 'src/utilities/testHelpers';
@@ -30,7 +30,7 @@ describe('BucketTable', () => {
   });
 
   it('renders buckets', () => {
-    const buckets = objectStorageBucketFactory.buildList(3);
+    const buckets = objectStorageBucketFactoryGen1.buildList(3);
     const { getByText } = renderWithTheme(
       <BucketTable
         data={buckets}

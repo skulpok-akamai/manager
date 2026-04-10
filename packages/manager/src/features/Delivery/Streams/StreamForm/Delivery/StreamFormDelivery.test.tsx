@@ -11,7 +11,7 @@ import { beforeEach, describe, expect } from 'vitest';
 import {
   akamaiObjectStorageDestinationFactory,
   customHttpsDestinationFactory,
-  objectStorageBucketFactory,
+  objectStorageBucketFactoryGen1,
 } from 'src/factories';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
 import { http, HttpResponse, server } from 'src/mocks/testServer';
@@ -30,12 +30,12 @@ const mockDestinations = [
 ];
 
 const mockBuckets = [
-  objectStorageBucketFactory.build({
+  objectStorageBucketFactoryGen1.build({
     hostname: 'bucket-with-hostname.us-east-1.linodeobjects.com',
     label: 'bucket-with-hostname',
     region: 'us-east',
   }),
-  objectStorageBucketFactory.build({
+  objectStorageBucketFactoryGen1.build({
     hostname: 'bucket-with-s3-endpoint.eu-central-1.linodeobjects.com',
     label: 'bucket-with-s3-endpoint',
     region: 'eu-central',
